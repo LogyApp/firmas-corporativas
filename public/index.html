@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Firmas - Logyser</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            color: #1F2E3A;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header img {
+            width: 250px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        input[disabled] {
+            background-color: #eee;
+            cursor: not-allowed;
+        }
+
+        .btn {
+            background: #F55400;
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 16px;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #d44900;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #preview {
+            margin-top: 30px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+
+        .required::after {
+            content: " *";
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <img src="https://storage.googleapis.com/logyser-recibo-public/logo.png" alt="Logyser">
+            <h2>Firma Corporativa</h2>
+        </div>
+
+        <div class="form-group">
+            <label class="required">Identificación (Cédula)</label>
+            <input type="number" id="identificacion" placeholder="Ingrese su identificación y presione Enter"
+                onkeypress="handleEnter(event)">
+        </div>
+
+        <div id="formulario-detalle" class="hidden">
+            <div class="form-group">
+                <label>Trabajador (Informativo)</label>
+                <input type="text" id="trabajador" disabled>
+            </div>
+
+            <div class="form-group">
+                <label class="required">Nombre para la firma corporativa</label>
+                <input type="text" id="nombre" required>
+            </div>
+
+            <div class="form-group">
+                <label class="required">Cargo</label>
+                <input type="text" id="cargo" required>
+            </div>
+
+            <div class="form-group">
+                <label class="required">Sede a la que corresponde (Operación)</label>
+                <input type="text" id="operacion" disabled>
+            </div>
+
+
+            <div class="form-group">
+                <label>Ubicación o dirección donde labora</label>
+                <input type="text" id="direccion">
+            </div>
+
+            <div class="form-group">
+                <label class="required">Email</label>
+                <input type="email" id="email" required>
+            </div>
+
+            <div class="form-group">
+                <label class="required">Número teléfono corporativo</label>
+                <input type="text" id="celular" required>
+            </div>
+
+            <div class="form-group">
+                <label>Cargue su foto para la firma</label>
+                <input type="file" id="foto" accept="image/*">
+            </div>
+
+            <button class="btn" onclick="guardarDatos()">GENERAR Y ACTUALIZAR FIRMA</button>
+        </div>
+
+        <div id="preview" class="hidden">
+            <h3>Vista Previa de tu Firma:</h3>
+            <div id="signature-render"></div>
+            <button class="btn" style="background: #001f5b; margin-top: 10px;" onclick="copyToClipboard()">COPIAR FIRMA
+                PARA CORREO</button>
+        </div>
+    </div>
+
+    <script>
+
+        let Url = 'http://localhost:8080';
+
+        async function handleEnter(e) {
+            if (e.key === 'Enter') {
+                const id = document.getElementById('identificacion').value;
+                if (!id) return;
+
+                const res = await fetch(`${Url}/api/empleado/${id}`);
+                const result = await res.json();
+
+                document.getElementById('formulario-detalle').classList.remove('hidden');
+
+                if (result.exists) {
+                    const d = result.data;
+                    document.getElementById('trabajador').value = d.Trabajador || 'Dato no disponible';
+                    document.getElementById('nombre').value = d.nombre || '';
+                    document.getElementById('cargo').value = d.cargo || '';
+                    document.getElementById('operacion').value = d.operacion || 'Administracion';
+                    document.getElementById('direccion').value = d.direccion || '';
+                    document.getElementById('email').value = d.email || '';
+                    document.getElementById('celular').value = d.celular || '';
+                    // Guardamos el área en un atributo oculto para el fondo
+                    document.getElementById('formulario-detalle').dataset.area = d.area || 'auxiliares';
+                    document.getElementById('formulario-detalle').dataset.fotoUrl = d.foto_url;
+                } else {
+                    document.getElementById('trabajador').value = "Nuevo Registro";
+                    document.getElementById('operacion').value = "Administracion";
+                    document.getElementById('formulario-detalle').dataset.area = 'auxiliares';
+                    ['nombre', 'cargo', 'operacion', 'direccion', 'email', 'celular'].forEach(f => document.getElementById(f).value = '');
+                }
+
+            }
+        }
+
+        async function guardarDatos() {
+            const btn = document.querySelector('.btn');
+            const id = document.getElementById('identificacion').value;
+            const area = document.getElementById('formulario-detalle').dataset.area || 'auxiliares';
+            const operacionValue = document.getElementById('operacion').value || "Administracion";
+            const formData = new FormData();
+            formData.append('operacion', operacionValue);
+
+            // VALIDACIÓN DE CAMPOS
+            const campos = ['nombre', 'cargo', 'operacion', 'email', 'celular'];
+            for (let campo of campos) {
+                if (!document.getElementById(campo).value) {
+                    alert(`El campo ${campo} es obligatorio`);
+                    return;
+                }
+            }
+
+            try {
+                btn.innerText = "PROCESANDO...";
+                btn.disabled = true;
+
+                // AQUÍ DEFINIMOS formData (lo que faltaba)
+                const formData = new FormData();
+                formData.append('Identificacion', id);
+                formData.append('nombre', document.getElementById('nombre').value);
+                formData.append('cargo', document.getElementById('cargo').value);
+                formData.append('operacion', document.getElementById('operacion').value);
+                formData.append('direccion', document.getElementById('direccion').value);
+                formData.append('email', document.getElementById('email').value);
+                formData.append('celular', document.getElementById('celular').value);
+                formData.append('area', area);
+
+                const fotoFile = document.getElementById('foto').files[0];
+                if (fotoFile) formData.append('foto', fotoFile);
+
+                // 1. Guardar en MySQL
+                const res = await fetch(`${Url}/api/guardar`, { method: 'POST', body: formData });
+                const result = await res.json();
+
+                if (result.success) {
+                    // 2. Generar el PNG
+                    const resImg = await fetch(`${Url}/api/generar-png`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            identificacion: id,
+                            nombre: document.getElementById('nombre').value,
+                            cargo: document.getElementById('cargo').value,
+                            operacion: document.getElementById('operacion').value,
+                            direccion: document.getElementById('direccion').value,
+                            email: document.getElementById('email').value,
+                            celular: document.getElementById('celular').value,
+                            area: area,
+                            fotoUrl: result.fotoUrl
+                        })
+                    });
+
+                    const imgResult = await resImg.json();
+
+                    if (imgResult.success) {
+                        document.getElementById('preview').classList.remove('hidden');
+                        document.getElementById('signature-render').innerHTML = `
+                    <p style="color: #F55400; font-weight: bold;">¡Firma generada! ya puedes copiar la imagen:</p>
+                    <a href="mailto:${email}">
+                        <img src="${imgResult.finalUrl}?t=${Date.now()}" style="width: 100%; max-width: 1444px; border: 0;">
+                    </a>
+                `;
+                        document.getElementById('preview').scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert('Error al procesar la firma.');
+            } finally {
+                btn.innerText = "GENERAR Y ACTUALIZAR FIRMA";
+                btn.disabled = false;
+            }
+        }
+        function renderFirma(fotoUrl, area) {
+            const nombre = document.getElementById('nombre').value;
+            const cargo = document.getElementById('cargo').value;
+            const operacion = document.getElementById('operacion').value;
+            const direccion = document.getElementById('direccion').value;
+            const email = document.getElementById('email').value;
+            const celular = document.getElementById('celular').value;
+            const fondoUrl = `https://storage.googleapis.com/logyser-recursos-corporativos/firmas-corporativas/areas/fondo-${area}.png`;
+
+            // Usamos el atributo background="" (antiguo pero compatible) + inline style para la vista previa
+            const htmlFirma = `
+    <table cellpadding="0" cellspacing="0" border="0" width="1444" height="519" background="${fondoUrl}" style="width: 1444px; height: 519px; background-image: url('${fondoUrl}'); background-size: cover; background-repeat: no-repeat; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; table-layout: fixed; background-color: #ffffff;">
+      <tr style="height: 410px;">
+        <td style="width: 410px; vertical-align: middle; text-align: center; padding-left: 20px;">
+          <div style="display: inline-block; border: 1px solid #ffffff; border-radius: 50%; margin-top: -15px;">
+            <img src="${fotoUrl}" width="295" height="295" style="width: 295px; height: 295px; border-radius: 50%; object-fit: cover; display: block;" alt="${nombre}">
+          </div>
+        </td>
+        <td style="vertical-align: middle; padding-left: 20px; width: 600px;">
+          <h1 style="margin: 0; font-size: 45px; font-weight: 800; color: #1F2E3A; letter-spacing: -1px; line-height: 1.1; text-shadow: 1px 1px 0 #ffffff;">${nombre}</h1>
+          <p style="margin: 10px 0; font-size: 30px; font-weight: 600; color: #C7743A;">${cargo}</p>
+          <div style="width: 140px; height: 5px; background-color: #C7743A; margin: 22px 0;"></div>
+          <table cellpadding="0" cellspacing="0" border="0" style="font-size: 24px; line-height: 1.4; color: #2F3B45;">
+            <tr>
+                <td style="padding-bottom: 8px;">
+                    <span style="color: #A45A2A; font-weight: 600;">Sede:</span> <span style="font-weight: 600;">${operacion}</span><br>
+                    <span style="font-weight: 400; font-size: 20px;">${direccion}</span>
+                </td>
+            </tr>
+            <tr>
+                <td><span style="color: #A45A2A; font-weight: 600;">Tel:</span> <span style="font-weight: 600;">(+57) ${celular}</span></td>
+            </tr>
+          </table>
+        </td>
+        <td style="width: 434px;"></td>
+      </tr>
+      <tr style="height: 109px;">
+        <td colspan="3" style="vertical-align: top; text-align: left; padding-left: 50px; padding-top: 5px;">
+          <a href="mailto:${email}" style="color: #1F2E3A; text-decoration: none; font-size: 35px; font-weight: 700;">${email}</a>
+        </td>
+      </tr>
+    </table>`;
+
+            document.getElementById('preview').classList.remove('hidden');
+            document.getElementById('signature-render').innerHTML = htmlFirma;
+        }
+
+        function copyToClipboard() {
+            // Seleccionamos solo la imagen o la tabla dentro del div, no el texto de arriba
+            const el = document.querySelector('#signature-render img');
+
+            if (!el) {
+                alert("Primero debes generar la firma");
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNode(el);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+
+            try {
+                document.execCommand('copy');
+                alert('Firma copiada con éxito.');
+            } catch (err) {
+                alert('Error al copiar la firma.');
+            }
+            window.getSelection().removeAllRanges();
+        }
+    </script>
+
+</body>
+
+</html>
