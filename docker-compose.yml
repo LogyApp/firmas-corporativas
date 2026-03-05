@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: firma-corporativa
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - HOST=${HOST}
+      - DBPORT=${DBPORT}
+      - USER=${USER}
+      - PASSWORD=${PASSWORD}
+      - DATABASE=${DATABASE}
+      - WAITFORTCONNECTION=${WAITFORTCONNECTION}
+      - LIMIT=${LIMIT}
+    env_file:
+      - .env
+    restart: unless-stopped
+    # Para Google Cloud Run, esto no es necesario pero útil para desarrollo local
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
