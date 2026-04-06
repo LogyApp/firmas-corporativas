@@ -215,22 +215,8 @@
             </div>
 
             <div class="form-group">
-                <label>Foto de perfil (opcional)</label>
+                <label>Foto para la agenda corporativa (opcional)</label>
                 <input type="file" id="foto" accept="image/*">
-            </div>
-
-            <div class="form-group">
-                <label>Diseño de la firma</label>
-                <div class="tipo-firma-group">
-                    <label>
-                        <input type="radio" name="tipoFirma" value="conFoto" id="opcionConFoto" checked>
-                        Con foto
-                    </label>
-                    <label>
-                        <input type="radio" name="tipoFirma" value="sinFoto" id="opcionSinFoto">
-                        Sin foto
-                    </label>
-                </div>
             </div>
 
             <div id="statusMsg" class="status-msg"></div>
@@ -293,7 +279,6 @@
             const btn = document.querySelector('.btn');
             const id = document.getElementById('identificacion').value;
             const area = document.getElementById('formulario-detalle').dataset.area || 'auxiliares';
-            const incluirFoto = document.querySelector('input[name="tipoFirma"]:checked').value === 'conFoto';
 
             const campos = ['nombre', 'cargo', 'operacion', 'email', 'celular'];
             for (let campo of campos) {
@@ -325,10 +310,7 @@
                 const result = await res.json();
 
                 if (result.success) {
-                    const fotoUrl = incluirFoto
-                        ? (result.fotoUrl || document.getElementById('formulario-detalle').dataset.fotoUrl || '')
-                        : '';
-                    renderFirma(fotoUrl, incluirFoto);
+                    renderFirma();
                     showStatus('¡Firma generada correctamente!', 'success');
                 } else {
                     showStatus('Error al guardar los datos: ' + (result.error || 'Intente de nuevo.'), 'error');
@@ -342,7 +324,7 @@
             }
         }
 
-        function renderFirma(fotoUrl, incluirFoto) {
+function renderFirma() {
             const nombre = document.getElementById('nombre').value.trim();
             const cargo = document.getElementById('cargo').value.trim();
             const operacion = document.getElementById('operacion').value.trim();
@@ -352,65 +334,54 @@
 
             const logoUrl = 'https://storage.googleapis.com/logyser-recibo-public/Logyser%20sin%20Nit.png';
 
-            // Círculo naranja con símbolo blanco adentro — estilo referencia
-            function ic(sym) {
-                return `<span style="display:inline-block;background-color:#E8762B;border-radius:50%;width:22px;height:22px;text-align:center;line-height:22px;font-size:11px;color:#ffffff;vertical-align:middle;font-family:Arial,sans-serif;">${sym}</span>`;
-            }
+            // --- AJUSTES DE ESTILO ---
+            
+            // 1. Nuevo Color Azul Corporativo para textos
+            const azulCorporativo = "#1A2E44"; 
+            
+            // Estilo base para textos de contacto con el nuevo azul
+            const textStyle = `margin:0 0 2px 0;font-size:12px;color:${azulCorporativo};font-family:Arial,Helvetica,sans-serif;`;
+            
+            // 2. Tamaño del Logo (Original: 220px + 40% = 308px)
+            const nuevoAnchoLogo = "308";
 
-            // Columna izquierda: foto (opcional) + logo
-            const photoBlock = (incluirFoto && fotoUrl)
-                ? `<div style="text-align:center;margin-bottom:14px;"><img src="${fotoUrl}" width="92" height="92" alt="${nombre}" style="border-radius:50%;object-fit:cover;display:inline-block;width:92px;height:92px;border:2px solid #E8762B;"></div>`
+            // --- CONSTRUCCIÓN DEL HTML DE LA FIRMA ---
+
+            const direccionHtml = direccion
+                ? `<p style="${textStyle}">${direccion}</p>`
                 : '';
-            const logoWidth = (incluirFoto && fotoUrl) ? 105 : 120;
+            const operacionHtml = operacion
+                ? `<p style="${textStyle}">${operacion}</p>`
+                : '';
 
-            const direccionHtml = direccion ? `<br><span style="color:#666666;">${direccion}</span>` : '';
-
-            const htmlFirma = `<table cellpadding="0" cellspacing="0" border="0" width="600" style="background-color:#FFFFFF;font-family:Arial,Helvetica,sans-serif;border:1px solid #DDE1E8;max-width:600px;">
+            const htmlFirma = `
+<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;max-width:480px;width:480px;background-color:#FFFFFF;">
   <tr>
-    <!-- Columna izquierda: foto + logo -->
-    <td width="130" valign="middle" style="padding:20px 14px 20px 18px;vertical-align:middle;text-align:center;background-color:#FFFFFF;">
-      ${photoBlock}<img src="${logoUrl}" alt="LOG &amp; SER" width="${logoWidth}" style="display:inline-block;width:${logoWidth}px;">
-    </td>
-    <!-- Separador vertical navy -->
-    <td width="2" bgcolor="#1A2E44" style="background-color:#1A2E44;padding:0;width:2px;"></td>
-    <!-- Columna derecha: información de contacto -->
-    <td valign="top" style="padding:20px 22px 16px 20px;vertical-align:top;background-color:#FFFFFF;">
-      <p style="margin:0 0 2px 0;color:#1A2E44;font-size:19px;font-weight:700;line-height:1.2;font-family:Arial,Helvetica,sans-serif;">${nombre}</p>
-      <p style="margin:0 0 10px 0;color:#E8762B;font-size:12px;font-weight:700;font-family:Arial,Helvetica,sans-serif;">${cargo}</p>
-      <div style="background-color:#E8762B;height:2px;width:36px;margin:0 0 13px 0;"></div>
-      <table cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td style="padding:3px 10px 4px 0;vertical-align:middle;">${ic('&#9993;')}</td>
-          <td style="font-size:12px;padding:3px 0 4px 0;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;">
-            <a href="mailto:${email}" style="color:#E8762B;text-decoration:none;font-weight:600;">${email}</a>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:3px 10px 4px 0;vertical-align:middle;">${ic('&#128241;')}</td>
-          <td style="font-size:12px;color:#333333;padding:3px 0 4px 0;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;">(+57) ${celular}</td>
-        </tr>
-        <tr>
-          <td style="padding:3px 10px 4px 0;vertical-align:top;padding-top:5px;">${ic('&#9670;')}</td>
-          <td style="font-size:12px;color:#333333;padding:3px 0 4px 0;vertical-align:top;font-family:Arial,Helvetica,sans-serif;line-height:1.5;">
-            ${operacion}${direccionHtml}
-          </td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding-top:9px;border-top:1px solid #EBEBEB;font-size:10px;color:#AAAAAA;font-family:Arial,Helvetica,sans-serif;white-space:nowrap;">
-            <a href="https://www.logyser.com" style="color:#E8762B;text-decoration:none;">www.logyser.com</a>
-          </td>
-        </tr>
-      </table>
+    <td style="padding:16px 20px 12px 20px;border:1px solid #DDE1E8;border-bottom:none;">
+      <p style="margin:0 0 2px 0;font-size:18px;font-weight:700;color:${azulCorporativo};font-family:Arial,Helvetica,sans-serif;">${nombre}</p>
+      <p style="margin:0 0 8px 0;font-size:13px;font-weight:600;color:#E8762B;font-family:Arial,Helvetica,sans-serif;">${cargo}</p>
+      
+      <p style="${textStyle}">
+        <span style="color:${azulCorporativo};">Email: </span>
+        <a href="mailto:${email}" style="color:#0066CC;text-decoration:none;font-weight:600;">${email}</a>
+      </p>
+      
+      <p style="${textStyle}">Celular: <span style="color:${azulCorporativo};">+57 ${celular}</span></p>
+      ${direccionHtml}${operacionHtml}
     </td>
   </tr>
-  <!-- Disclaimer -->
+<tr>
+    <td style="padding:5px 20px 5px 20px;border-left:1px solid #DDE1E8;border-right:1px solid #DDE1E8;border-bottom:none;text-align:left;">
+      <img src="${logoUrl}" alt="LOG &amp; SER" width="${nuevoAnchoLogo}" style="display:block;width:${nuevoAnchoLogo}px;height:auto;margin:0;">
+    </td>
+  </tr>
   <tr>
-    <td colspan="3" bgcolor="#F7F8FA" style="background-color:#F7F8FA;padding:10px 18px 12px 18px;border-top:1px solid #DDE1E8;">
-      <p style="margin:0;color:#AAAAAA;font-size:8px;line-height:1.5;font-family:Arial,Helvetica,sans-serif;">
-        <strong style="color:#888888;">AVISO IMPORTANTE:</strong> Este correo electrónico y cualquier archivo adjunto pueden contener información confidencial y privilegiada. Está destinado a ser recibido únicamente por personas con derecho a recibir la información. Si no es el destinatario previsto, elimínelo de su sistema y notifique al remitente. No debe copiarlo ni usarlo para ningún propósito ni divulgar o distribuir su contenido a ninguna otra persona.
+    <td style="background-color:#F7F8FA;padding:12px 20px;border:1px solid #DDE1E8;">
+      <p style="margin:0;color:#888888;font-size:9px;line-height:1.4;font-family:Arial,Helvetica,sans-serif;text-align:justify;">
+        <strong style="color:#666666;">AVISO IMPORTANTE:</strong> Este correo electrónico y cualquier archivo adjunto pueden contener información confidencial y privilegiada. Está destinado a ser recibido únicamente por personas con derecho a recibir la información. Si no es el destinatario previsto, elimínelo de su sistema y notifique al remitente.
       </p>
-      <p style="margin:5px 0 0 0;color:#3A7A5A;font-size:8px;font-family:Arial,Helvetica,sans-serif;">
-        &#127807; <em>Por favor, piensa en el medio ambiente antes de imprimir este contenido.</em>
+      <p style="margin:8px 0 0 0;color:#3A7A5A;font-size:9px;font-family:Arial,Helvetica,sans-serif;">
+        🌱 <em>Por favor, piensa en el medio ambiente antes de imprimir este contenido.</em>
       </p>
     </td>
   </tr>
